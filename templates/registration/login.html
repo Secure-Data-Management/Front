@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block 'content' %}
+    {% if user.is_authenticated %}
+        <p>
+            You are already logged in: <a href="{% url 'logout' %}">Log out</a>.
+        </p>
+    {% else %}
+        <h1>Login</h1>
+
+        <form method="POST" action=".">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="login" />
+        </form>
+    {% endif %}
+
+{% endblock %}

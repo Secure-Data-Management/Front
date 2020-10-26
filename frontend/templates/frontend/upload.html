@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block 'content' %}
+    <h1>Upload file</h1>
+
+    <p>
+       Upload a new file onto your application. Only you and the advisor can see it.
+    </p>
+
+    {% if upload %}
+        Your file has been correctly uploaded.
+    {% endif %}
+
+    <form action="." method="POST"  enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Upload file" />
+    </form>
+
+{% endblock %}

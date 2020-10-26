@@ -1,0 +1,10 @@
+{% if user.is_authenticated %}
+    <ul>
+        <li><a href="{% url 'frontend:upload' %}">Upload a new file</a></li>
+        <li><a href="{% url 'frontend:search' %}">Search files</a></li>
+    </ul>
+{% endif %}
+
+{% block 'content' %}
+
+{% endblock %}
