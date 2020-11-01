@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block 'content' %}
+    <h1>Create an account</h1>
+
+    <p>
+        Creating an account will create a pair of keys to use in the encrypted search.
+    </p>
+
+    <form method="POST" action=".">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Create Account" />
+    </form>
+
+{% endblock %}
