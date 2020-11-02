@@ -12,8 +12,6 @@ from typing import Union, Tuple, List, Callable, Any
 
 import hashlib
 
-from pooc.bn256 import *
-
 from pypbc import *
 
 
