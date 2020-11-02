@@ -22,7 +22,7 @@ def get_genkey():
 def encryption(file_encrypt:str, keywords, public_keys):
     '''Encrypt the given file and send it to the server '''
     # mpeck(pk_list: list of public keys, keyword_list, genkey, message: file)
-    key_gen = get_g'Readme.md']enkey()
+    key_gen = get_genkey()
 
     # MPECK
     (ciphertext, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
@@ -72,5 +72,5 @@ def keygen():
 
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key))
-    
+
     return public_key, secret_key
