@@ -43,13 +43,15 @@ def mpeck(pk_list: List[Element], keyword_list: List[str], genkey: KeyGen, messa
     # selects two random values in Zp*
     s: Element = Element.random(genkey.pairing, Zr)
     r: Element = Element.random(genkey.pairing, Zr)
+    print('RANDOM S => ', s)
+    print('RANDOM R =>', r)
     # computes the A=g^r
     A: Element = genkey.g ** r
     # computes B = pk**s for each public key
     n = len(pk_list)
     B: List[Element] = []
     for j in range(n):
-        yj: Element = genkey.pub_keys[j]
+        yj: Element = Element(genkey.pairing, G1, value=pk_list[j])
         B.append(yj ** s)
     # computes C = (h^r)(f^s) for each keyword
     C: List[Element] = []
@@ -67,6 +69,7 @@ def mpeck(pk_list: List[Element], keyword_list: List[str], genkey: KeyGen, messa
         e_g_g1: Element = e_g_g ** e_r_s
         e_g_g2: bytes = hashlib.sha256(e_g_g1.__str__().encode()).digest()
         E: bytearray = xor(message, e_g_g2)
+    print(E, A, B, C)
     return E, A, B, C
 
 

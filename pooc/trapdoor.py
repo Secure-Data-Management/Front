@@ -19,8 +19,12 @@ def generate_trapdoor(priv_key: str, index_list: List[int], keyword_list: List[s
     priv_key = Element(genkey.pairing, Zr, value=priv_key)
     t: Element = Element.random(genkey.pairing, Zr)
 
+    # TODO : suppr
+    print('TRAPDOOR RANDOM t ==> ', t)
+
     # Tjq1 = g ** t ; g the generator of G1 as defined in KeyGen
     Tjq1 = genkey.g ** t
+
 
     # Tjq2 = (hI1... hIm)**t where hIj = h1(wIj)
     Tjq2: Element = Element.one(genkey.pairing, G1)

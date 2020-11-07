@@ -49,10 +49,11 @@ def search_keywords(keywords, private_key):
     # generate_trapdoor(priv_key: Element, index_list: List[int], keyword_list: List[str], genkey: KeyGen)
     key_gen = get_genkey()
     index_list = [i for i in range(len(keywords))]
-    print(index_list)
 
     # Generate the trapdoor
     trapdoor = generate_trapdoor(private_key, index_list, keywords, key_gen)
+    print(trapdoor)
+    print('Generator', key_gen.g)
 
     for i in range(3):
         trapdoor[i] = str(trapdoor[i])
