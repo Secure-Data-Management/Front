@@ -5,7 +5,10 @@ from pooc.trapdoor import generate_trapdoor
 
 import json
 import base64
-ADDRESS = 'http://192.168.1.67:8000/'
+
+ADDRESS = 'http://127.0.0.1:8000/'
+
+KEYGEN:KeyGen = None
 
 
 def get_genkey():
@@ -19,10 +22,14 @@ def get_genkey():
     return key_gen
 
 
-def encryption(file_encrypt:str, keywords, public_keys):
+def encryption(file_encrypt: str, keywords, public_keys):
     '''Encrypt the given file and send it to the server '''
     # mpeck(pk_list: list of public keys, keyword_list, genkey, message: file)
-    key_gen = get_genkey()
+    global KEYGEN
+    if KEYGEN is None:
+        print("ERROR")
+        return
+    key_gen = KEYGEN
 
     # MPECK
     (ciphertext, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
@@ -47,7 +54,12 @@ def search_keywords(keywords, private_key):
     ''' Given a keyword, send it to the server (that performs the encrypted search) adn return the result ;
     Decrypt the files and store them into the "files" directory'''
     # generate_trapdoor(priv_key: Element, index_list: List[int], keyword_list: List[str], genkey: KeyGen)
-    key_gen = get_genkey()
+    global KEYGEN
+    if KEYGEN is None:
+        print("ERROR")
+        return
+
+    key_gen = KEYGEN
     index_list = [i for i in range(len(keywords))]
 
     # Generate the trapdoor
@@ -66,10 +78,11 @@ def search_keywords(keywords, private_key):
 
 def keygen():
     ''' Contact the server, gets the global parameters and compute the key pair for a user '''
-    key_gen = get_genkey()
+    global KEYGEN
+    KEYGEN = get_genkey()
 
-    public_key = str(key_gen.pub_keys[0])
-    secret_key = str(key_gen.priv_keys[0])
+    public_key = str(KEYGEN.pub_keys[0])
+    secret_key = str(KEYGEN.priv_keys[0])
 
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key))
