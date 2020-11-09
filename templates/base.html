@@ -2,6 +2,12 @@
     <ul>
         <li><a href="{% url 'frontend:upload' %}">Upload a new file</a></li>
         <li><a href="{% url 'frontend:search' %}">Search files</a></li>
+        <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+{% else %}
+    <ul>
+        <li><a href="{% url 'login' %}">Login</a></li>
+        <li><a href="{% url 'frontend:new_account' %}">Create account</a></li>
     </ul>
 {% endif %}
 

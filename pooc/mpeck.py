@@ -43,8 +43,7 @@ def mpeck(pk_list: List[Element], keyword_list: List[str], genkey: KeyGen, messa
     # selects two random values in Zp*
     s: Element = Element.random(genkey.pairing, Zr)
     r: Element = Element.random(genkey.pairing, Zr)
-    print('RANDOM S => ', s)
-    print('RANDOM R =>', r)
+
     # computes the A=g^r
     A: Element = genkey.g ** r
     # computes B = pk**s for each public key
@@ -73,10 +72,15 @@ def mpeck(pk_list: List[Element], keyword_list: List[str], genkey: KeyGen, messa
     return E, A, B, C
 
 
-def mdec(xj: Element, E: bytearray, Bj: Element, A: Element, k: KeyGen):
+def mdec(xj: str, E: bytearray, Bj: str, A: str, k: KeyGen):
     """Decrypts the cipher E, using private key xj, Bj and A"""
+    secret_key = int(xj, base=16)
+    secret_key = Element(k.pairing, Zr, value=secret_key)  # Convert to Element
+    A = Element(k.pairing, G1, value=A)  # Convert to Element
+    Bj = Element(k.pairing, G1, value=Bj)  # Convert to Element
+
     e_A_Bj: Element = k.e(A, Bj)
-    res: Element = e_A_Bj ** (~xj)
+    res: Element = e_A_Bj ** (~secret_key)
     Xj = hashlib.sha256(res.__str__().encode()).digest()
     m = xor(E, Xj)
     m = m.decode()
