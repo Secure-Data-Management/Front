@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from frontend.forms import FileForm, SearchForm, UserForm
 from frontend.functions import encryption, search_keywords, keygen
 from frontend.models import Profile
+from frontend.file_generator import generate_files
 
 
 # Create your views here.
@@ -20,6 +21,9 @@ def upload_file(request):
     ''' Upload a file onto the server '''
     form = FileForm(request.POST or None, request.FILES)
     upload = False
+
+    if(request.GET.get('generate_button')):
+        generate_files()
 
     if form.is_valid():
         # file_encrypt must be a string
