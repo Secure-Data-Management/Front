@@ -6,20 +6,52 @@ from frontend.functions import encryption, search_keywords, keygen
 from frontend.models import Profile
 from frontend.file_generator import generate_files
 
+USERKEYS: UserKeys = None
+CONSULTANT: UserKeys = None
+
 
 # Create your views here.
 def home(request):
-    ''' Homepage of the application '''
+    """ Homepage of the application """
     if request.user.is_authenticated:
         return render(request, 'frontend/home.html', locals())
     else:
         return redirect('login')
 
 
+def keys_from_file():
+    ''' Get the keys from a user.txt file '''
+    global USERKEYS, CONSULTANT
+
+    if USERKEYS is None:
+        raise Exception("PASS")
+        # json_object = UserKeys.get_from_file()
+        # USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
+        #
+        # # Create consultant
+        # consultant_key, consultant_id = get_consultant()
+        # CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
+        # print(USERKEYS, CONSULTANT)
+
+
 @login_required
 def upload_file(request):
+    global USERKEYS, CONSULTANT
+    keys_from_file()
+
     ''' Upload a file onto the server '''
-    form = FileForm(request.POST or None, request.FILES)
+    print(USERKEYS.public_key, CONSULTANT.public_key)
+    if USERKEYS.public_key == CONSULTANT.public_key:
+        # It is the consultant
+        users_json = get_user_list()
+        list_choices = []
+        # In the list, add every user except the consultant itself
+        for user in users_json:
+            if user['id'] != USERKEYS.id:
+                list_choices.append({"id": user['id'], "name": user['name']})
+        form = ConsultantFileForm(list_choices, request.POST or None, request.FILES)
+    else:
+        form = FileForm(request.POST or None, request.FILES)
     upload = False
 
     if(request.GET.get('generate_button')):
@@ -30,14 +62,33 @@ def upload_file(request):
         file_e = form.cleaned_data['file']
         file_encrypt = file_e.read()
         
-        keywords = form.cleaned_data['keywords'].split(', ')  # TODO : how to split
-        print(keywords)
+        # TODO : modify keywords form field
+        keywords_to = form.cleaned_data['keywords_to']
+        keywords_from = form.cleaned_data['keywords_from']
+        keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
+        keywords = [keywords_to, keywords_from, keywords_date]
 
-        # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
-        # TODO : find the key of the consultant
-        public_keys = [request.user.profile.public_key]
+        if USERKEYS.public_key == CONSULTANT.public_key:
+            public_keys = [USERKEYS.public_key]
+            public_ids = [USERKEYS.id]
 
-        encryption(file_encrypt, keywords, public_keys)  # Empty function performing the encryption of the file and sending it to the server
+            encrypt_to = form.cleaned_data['encrypt_to']  # id of the user which can read the file
+            for user in users_json:
+                if user['id'] == int(encrypt_to):
+                    public_keys.append(user['key'])
+                    public_ids.append(user['id'])
+
+            print(users_json)
+            print(encrypt_to)
+            print(public_keys)
+            print(public_ids)
+
+        else:
+            # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
+            public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
+            public_ids = [USERKEYS.id, CONSULTANT.id]
+
+        encryption(file_encrypt, keywords, public_keys, public_ids, USERKEYS.secret_key)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
 
         form = FileForm()
@@ -45,20 +96,33 @@ def upload_file(request):
     return render(request, 'frontend/upload.html', locals())
 
 
-
 @login_required
 def search_files(request):
     ''' Search keywords among encrypted files '''
+    global USERKEYS, CONSULTANT
+    keys_from_file()
+
     form = SearchForm(request.POST or None)
     search = False
 
     if form.is_valid():
-        keywords = form.cleaned_data['keywords'].split(', ')
+        # Generate the keywords
+        keywords_to = form.cleaned_data['keywords_to']
+        keywords_from = form.cleaned_data['keywords_from']
+
+        if form.cleaned_data['keywords_date'] is None:
+            keywords_date = ""
+        else:
+            keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
+
+        keywords = [keywords_to, keywords_from, keywords_date]
         print(keywords)
-        files = search_keywords(keywords, request.user.profile.secret_key)  # Empty function performing the search and returning the files
+
+        # Perform the search => send to the server
+        files = search_keywords(keywords, USERKEYS.secret_key, USERKEYS.id) 
         search = True
     
-    return render(request, 'frontend/search.html', locals())
+    return render(request, 'frontend/search.html', locals())    
 
 
 # QUESTIONS
@@ -67,23 +131,23 @@ def search_files(request):
 # When are the keywords generated ? Before or after we upload a form ?
 # What to do with the local decrypted files
 
-
-
 def create_account(request):
+    global USERKEYS, CONSULTANT
+
     form = UserForm(request.POST or None)
     if form.is_valid():
-        # Create the User object
         new_user = form.save()
 
         # Contact the server to get the global param and compute the pair of keys
-        public_key, secret_key = keygen()
-        
-        # Save the keys to the database
-        new_profile = Profile()
-        new_profile.user = new_user
-        new_profile.secret_key = secret_key
-        new_profile.public_key = public_key
-        new_profile.save()
+        public_key, secret_key, user_id = keygen(form.cleaned_data['username'])
+
+        # Save the user information in a JSON file
+        USERKEYS = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
+        USERKEYS.save_to_file()
+
+        # Create consultant
+        consultant_key, consultant_id = get_consultant()
+        CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
 
         # Redirect to the login page
         return redirect('frontend:home')
