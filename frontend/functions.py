@@ -34,6 +34,12 @@ def get_consultant():
     return public_key, consultant_id
 
 
+def get_user_list():
+    response = requests.get(ADDRESS + 'keys/get_users')
+    json_object = json.loads(response.text)
+    return json_object
+
+
 def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
     """Encrypt the given file and send it to the server """
     # mpeck(pk_list: list of public keys, keyword_list, genkey, message: file)

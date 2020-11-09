@@ -10,6 +10,20 @@ class FileForm(forms.Form):
     keywords_date = forms.DateField(label="Date", required=False)
 
 
+class ConsultantFileForm(forms.Form):
+    file = forms.FileField()
+    keywords_to = forms.CharField(label="To", required=False)
+    keywords_from = forms.CharField(label="From", required=False)
+    keywords_date = forms.DateField(label="Date", required=False)
+
+    def __init__(self, user_list, *args, **kwargs):
+        CHOICES = []
+        for user in user_list:
+            CHOICES.append((user['id'], user['name']))
+        super(ConsultantFileForm, self).__init__(*args, **kwargs)
+        self.fields['encrypt_to'] = forms.ChoiceField(choices=CHOICES)
+
+
 class SearchForm(forms.Form):
     keywords_to = forms.CharField(label="To", required=False)
     keywords_from = forms.CharField(label="From", required=False)

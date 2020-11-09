@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
-from frontend.forms import FileForm, SearchForm, UserForm
-from frontend.functions import encryption, search_keywords, keygen, get_consultant
+from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list
 from frontend.models import UserKeys
 
 USERKEYS: UserKeys = None
@@ -24,13 +24,13 @@ def keys_from_file():
 
     if USERKEYS is None:
         raise Exception("PASS")
-        json_object = UserKeys.get_from_file()
-        USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
-
-        # Create consultant
-        consultant_key, consultant_id = get_consultant()
-        CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
-        print(USERKEYS, CONSULTANT)
+        # json_object = UserKeys.get_from_file()
+        # USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
+        #
+        # # Create consultant
+        # consultant_key, consultant_id = get_consultant()
+        # CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
+        # print(USERKEYS, CONSULTANT)
 
 
 @login_required
@@ -39,7 +39,18 @@ def upload_file(request):
     keys_from_file()
 
     ''' Upload a file onto the server '''
-    form = FileForm(request.POST or None, request.FILES)
+    print(USERKEYS.public_key, CONSULTANT.public_key)
+    if USERKEYS.public_key == CONSULTANT.public_key:
+        # It is the consultant
+        users_json = get_user_list()
+        list_choices = []
+        # In the list, add every user except the consultant itself
+        for user in users_json:
+            if user['id'] != USERKEYS.id:
+                list_choices.append({"id": user['id'], "name": user['name']})
+        form = ConsultantFileForm(list_choices, request.POST or None, request.FILES)
+    else:
+        form = FileForm(request.POST or None, request.FILES)
     upload = False
 
     if form.is_valid():
@@ -52,11 +63,26 @@ def upload_file(request):
         keywords_from = form.cleaned_data['keywords_from']
         keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
         keywords = [keywords_to, keywords_from, keywords_date]
-        print(keywords)
 
-        # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
-        public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
-        public_ids = [USERKEYS.id, CONSULTANT.id]
+        if USERKEYS.public_key == CONSULTANT.public_key:
+            public_keys = [USERKEYS.public_key]
+            public_ids = [USERKEYS.id]
+
+            encrypt_to = form.cleaned_data['encrypt_to']  # id of the user which can read the file
+            for user in users_json:
+                if user['id'] == int(encrypt_to):
+                    public_keys.append(user['key'])
+                    public_ids.append(user['id'])
+
+            print(users_json)
+            print(encrypt_to)
+            print(public_keys)
+            print(public_ids)
+
+        else:
+            # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
+            public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
+            public_ids = [USERKEYS.id, CONSULTANT.id]
 
         encryption(file_encrypt, keywords, public_keys, public_ids, USERKEYS.secret_key)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
@@ -106,9 +132,7 @@ def create_account(request):
 
     form = UserForm(request.POST or None)
     if form.is_valid():
-        if form.cleaned_data['username'] != 'consultant':
-            # Create the User object
-            new_user = form.save()
+        new_user = form.save()
 
         # Contact the server to get the global param and compute the pair of keys
         public_key, secret_key, user_id = keygen(form.cleaned_data['username'])
