@@ -6,7 +6,12 @@
     <p>
        Upload a new file onto your application. Only you and the advisor can see it.
     </p>
-
+    <p>
+        You can choose to generate files by clicking on the button below.
+    </p>
+    <form action="." method="get">
+        <input type="submit" class="btn" value="Generate Files" name="generate_button">
+    </form>
     {% if upload %}
         Your file has been correctly uploaded.
     {% endif %}
