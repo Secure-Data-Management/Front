@@ -8,9 +8,10 @@ from frontend.models import UserKeys
 USERKEYS: UserKeys = None
 CONSULTANT: UserKeys = None
 
+
 # Create your views here.
 def home(request):
-    ''' Homepage of the application '''
+    """ Homepage of the application """
     if request.user.is_authenticated:
         return render(request, 'frontend/home.html', locals())
     else:
@@ -22,6 +23,7 @@ def keys_from_file():
     global USERKEYS, CONSULTANT
 
     if USERKEYS is None:
+        raise Exception("PASS")
         json_object = UserKeys.get_from_file()
         USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
 
@@ -35,7 +37,6 @@ def keys_from_file():
 def upload_file(request):
     global USERKEYS, CONSULTANT
     keys_from_file()
-    
 
     ''' Upload a file onto the server '''
     form = FileForm(request.POST or None, request.FILES)
@@ -50,12 +51,12 @@ def upload_file(request):
         keywords_to = form.cleaned_data['keywords_to']  # TODO : check if empty forms create empty string
         # keywords_from = form.cleaned_data['keywords_from']
         # keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
-        keywords = [keywords_to] # [keywords_to, keywords_from, keywords_date]
+        keywords = [keywords_to]  # [keywords_to, keywords_from, keywords_date]
         print(keywords)
 
         # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
-        public_keys = [USERKEYS.public_key] #, CONSULTANT.public_key]
-        public_ids = [USERKEYS.id] #, CONSULTANT.id]
+        public_keys = [USERKEYS.public_key]  #, CONSULTANT.public_key]
+        public_ids = [USERKEYS.id]  #, CONSULTANT.id]
 
         encryption(file_encrypt, keywords, public_keys, public_ids, USERKEYS.secret_key)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
@@ -63,7 +64,6 @@ def upload_file(request):
         form = FileForm()
 
     return render(request, 'frontend/upload.html', locals())
-
 
 
 @login_required

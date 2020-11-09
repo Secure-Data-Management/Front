@@ -8,7 +8,7 @@ import json
 import base64
 
 ADDRESS = 'http://192.168.1.67:8000/'
-KEYGEN:KeyGen = None
+KEYGEN: KeyGen = None
 
 
 def get_genkey():
@@ -35,7 +35,7 @@ def get_consultant():
 
 
 def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
-    '''Encrypt the given file and send it to the server '''
+    """Encrypt the given file and send it to the server """
     # mpeck(pk_list: list of public keys, keyword_list, genkey, message: file)
     global KEYGEN
 
@@ -45,12 +45,12 @@ def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
     key_gen = KEYGEN
 
     # MPECK
-    (ciphertext, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
+    (ciphertext, A, B, C) = mpeck(public_keys, ['balba'], key_gen, file_encrypt)
     A = str(A)  # transforms elements into string
     B = [str(i) for i in B]
     C = [str(i) for i in C]
 
-    cipher = base64.b64encode(ciphertext).decode('ASCII')
+    cipher = base64.b64encode(ciphertext)
 
     # Send everything to the server
     dictionnary = {
@@ -61,8 +61,7 @@ def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
         "id_list": id_list,  # Autant d'éléments que dans B
     }
 
-
-    result = mdec(private_key, cipher, B[0], A, KEYGEN)
+    result = mdec(private_key, base64.b64decode(cipher), B[0], A, KEYGEN)
     print('RESULT ', result, '\n\n\n')
 
     r = requests.post(ADDRESS + 'file/upload', data=json.dumps(dictionnary))
@@ -70,8 +69,8 @@ def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
 
 
 def search_keywords(keywords, private_key, user_id):
-    ''' Given a keyword, send it to the server (that performs the encrypted search) adn return the result ;
-    Decrypt the files and store them into the "files" directory'''
+    """ Given a keyword, send it to the server (that performs the encrypted search) adn return the result ;
+    Decrypt the files and store them into the "files" directory """
     # generate_trapdoor(priv_key: Element, index_list: List[int], keyword_list: List[str], genkey: KeyGen)
     global KEYGEN
 
@@ -124,8 +123,8 @@ def search_keywords(keywords, private_key, user_id):
     return file_list
 
 
-def keygen(username:str):
-    ''' Contact the server, gets the global parameters and compute the key pair for a user '''
+def keygen(username: str):
+    """ Contact the server, gets the global parameters and compute the key pair for a user """
     global KEYGEN
     KEYGEN = get_genkey()
 
@@ -137,6 +136,5 @@ def keygen(username:str):
     user_id = int(key_request.text)
     
     # TODO case "user_already_exist"
-
     return public_key, secret_key, user_id
 
