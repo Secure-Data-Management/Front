@@ -48,15 +48,15 @@ def upload_file(request):
         file_encrypt = file_e.read()
         
         # TODO : modify keywords form field
-        keywords_to = form.cleaned_data['keywords_to']  # TODO : check if empty forms create empty string
-        # keywords_from = form.cleaned_data['keywords_from']
-        # keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
-        keywords = [keywords_to]  # [keywords_to, keywords_from, keywords_date]
+        keywords_to = form.cleaned_data['keywords_to']
+        keywords_from = form.cleaned_data['keywords_from']
+        keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
+        keywords = [keywords_to, keywords_from, keywords_date]
         print(keywords)
 
         # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
-        public_keys = [USERKEYS.public_key]  #, CONSULTANT.public_key]
-        public_ids = [USERKEYS.id]  #, CONSULTANT.id]
+        public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
+        public_ids = [USERKEYS.id, CONSULTANT.id]
 
         encryption(file_encrypt, keywords, public_keys, public_ids, USERKEYS.secret_key)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
@@ -85,7 +85,7 @@ def search_files(request):
         else:
             keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
 
-        keywords = [keywords_to] #, keywords_from, keywords_date]
+        keywords = [keywords_to, keywords_from, keywords_date]
         print(keywords)
 
         # Perform the search => send to the server
@@ -100,8 +100,6 @@ def search_files(request):
 # How is the server setup ? How do we communicate with it ?
 # When are the keywords generated ? Before or after we upload a form ?
 # What to do with the local decrypted files
-
-
 
 def create_account(request):
     global USERKEYS, CONSULTANT

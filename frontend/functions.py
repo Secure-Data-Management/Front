@@ -45,24 +45,24 @@ def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
     key_gen = KEYGEN
 
     # MPECK
-    (ciphertext, A, B, C) = mpeck(public_keys, ['balba'], key_gen, file_encrypt)
+    (ciphertext, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
     A = str(A)  # transforms elements into string
     B = [str(i) for i in B]
     C = [str(i) for i in C]
 
-    cipher = base64.b64encode(ciphertext)
+    cipher = base64.b64encode(ciphertext).decode('ASCII')
 
     # Send everything to the server
     dictionnary = {
-        "ciphertext": cipher,
+        "E": cipher,
         "A": A,
         "B": B,
         "C": C,
         "id_list": id_list,  # Autant d'éléments que dans B
     }
 
-    result = mdec(private_key, base64.b64decode(cipher), B[0], A, KEYGEN)
-    print('RESULT ', result, '\n\n\n')
+    # result = mdec(private_key, base64.b64decode(cipher), B[0], A, KEYGEN)
+    # print('RESULT ', result, '\n\n\n')
 
     r = requests.post(ADDRESS + 'file/upload', data=json.dumps(dictionnary))
     # TODO upload successful or no answer
@@ -118,7 +118,7 @@ def search_keywords(keywords, private_key, user_id):
         with open(file_path, 'w') as file:
             file.write(result)
 
-            file_list.append(file_path)
+            file_list.append('file_' + str(index) + '.txt')
 
     return file_list
 
