@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block 'content' %}
+<div class="container">
     <h1>Search among your files</h1>
 
     <p>
@@ -10,7 +11,7 @@
     <form method="POST" action=".">
         {% csrf_token %}
         {{ form.as_p }}
-        <input type="submit" value="search keywords" />
+        <input type="submit" class="btn btn-secondary" value="Search Keywords" />
     </form>
 
     {% if search %}
@@ -19,4 +20,6 @@
         {% endfor %}
     {% endif %}
 
+</div>
+    
 {% endblock %}
