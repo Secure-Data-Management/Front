@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 class FileForm(forms.Form):
     file = forms.FileField()
-    keywords = forms.CharField()
+    keywords_file = forms.FileField()
 
 
 class SearchForm(forms.Form):
