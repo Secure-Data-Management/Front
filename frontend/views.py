@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
-from frontend.forms import FileForm, SearchForm, UserForm
-from frontend.functions import encryption, search_keywords, keygen
-from frontend.models import Profile
 from frontend.file_generator import generate_files
+from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list
+from frontend.models import UserKeys
 
 USERKEYS: UserKeys = None
 CONSULTANT: UserKeys = None
