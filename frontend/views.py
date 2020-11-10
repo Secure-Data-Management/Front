@@ -37,6 +37,18 @@ def keys_from_file():
 def upload_file(request):
     global USERKEYS, CONSULTANT
     keys_from_file()
+    
+    ''' Generate random file and the Keywords file associated '''
+    if(request.GET.get('generate_button')):
+        generate_files()
+        f = open('./frontend/data_user/File.csv', 'r')
+        file_content = f.read()
+        f.close()
+        f = open('./frontend/data_user/File_keywords.csv', 'r')
+        file_keywords_content = f.read()
+        f.close()
+        context = {'file_content': file_content, 'file_keywords_content': file_keywords_content}
+
 
     ''' Upload a file onto the server '''
     print(USERKEYS.public_key, CONSULTANT.public_key)
