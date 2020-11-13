@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block 'content' %}
+<div class="container">
     <h1>Upload file</h1>
 
     <p>
@@ -10,8 +11,24 @@
         You can choose to generate files by clicking on the button below.
     </p>
     <form action="." method="get">
-        <input type="submit" class="btn" value="Generate Files" name="generate_button">
+        <input type="submit" class="btn btn-secondary" value="Generate Files" name="generate_button">
     </form>
+    <div class="row">
+        <div class="col-md-6">
+            <p>
+                File content (File.csv):
+            </p>
+            <div class="jumbotron">{{ file_content }}</div>
+        </div>
+        <div class="col-md-6">
+            <p>
+                Keywords associated (File_keywords.csv):
+            </p>
+            <div class="jumbotron">{{ file_keywords_content }}</div>
+        </div> 
+    </div>
+     
+    
     {% if upload %}
         Your file has been correctly uploaded.
     {% endif %}
@@ -19,7 +36,8 @@
     <form action="." method="POST"  enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <input type="submit" value="Upload file" />
+        <input type="submit" class="btn btn-secondary" value="Upload file" />
     </form>
+</div>
 
 {% endblock %}

@@ -8,6 +8,7 @@ class FileForm(forms.Form):
     keywords_to = forms.CharField(label="To", required=False)
     keywords_from = forms.CharField(label="From", required=False)
     keywords_date = forms.DateField(label="Date", required=False)
+    keywords_file = forms.FileField()
 
 
 class ConsultantFileForm(forms.Form):
