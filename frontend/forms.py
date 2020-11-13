@@ -4,18 +4,30 @@ from django.contrib.auth.forms import UserCreationForm
 
 
 class FileForm(forms.Form):
+    TYPE_CHOICE = [
+        ('Debit', 'Debit'),
+        ('Credit', 'Credit')
+    ]
     file = forms.FileField()
-    keywords_to = forms.CharField(label="To", required=False)
-    keywords_from = forms.CharField(label="From", required=False)
-    keywords_date = forms.DateField(label="Date", required=False)
-    keywords_file = forms.FileField()
+    keywords_type = forms.ChoiceField(label="Debit or Credit", choices=TYPE_CHOICE)
+    keywords_to = forms.CharField(label="To")
+    keywords_amount = forms.IntegerField(label="Amount")
+    keywords_date = forms.DateField(label="Date")
+    keywords_bank = forms.CharField(label="Bank")
 
 
 class ConsultantFileForm(forms.Form):
+    TYPE_CHOICE = [
+        ('Debit', 'Debit'),
+        ('Credit', 'Credit')
+    ]
+
     file = forms.FileField()
-    keywords_to = forms.CharField(label="To", required=False)
-    keywords_from = forms.CharField(label="From", required=False)
-    keywords_date = forms.DateField(label="Date", required=False)
+    keywords_type = forms.ChoiceField(label="Debit or Credit", choices=TYPE_CHOICE)
+    keywords_to = forms.CharField(label="To")
+    keywords_amount = forms.IntegerField(label="Amount")
+    keywords_date = forms.DateField(label="Date")
+    keywords_bank = forms.CharField(label="Bank")
 
     def __init__(self, user_list, *args, **kwargs):
         CHOICES = []
@@ -26,9 +38,17 @@ class ConsultantFileForm(forms.Form):
 
 
 class SearchForm(forms.Form):
+    TYPE_CHOICE = [
+        ('', '- - - -'),
+        ('Debit', 'Debit'),
+        ('Credit', 'Credit')
+    ]
+
+    keywords_type = forms.ChoiceField(label="Debit or Credit", choices=TYPE_CHOICE, required=False)
     keywords_to = forms.CharField(label="To", required=False)
-    keywords_from = forms.CharField(label="From", required=False)
+    keywords_amount = forms.IntegerField(label="Amount", required=False)
     keywords_date = forms.DateField(label="Date", required=False)
+    keywords_bank = forms.CharField(label="Bank", required=False)
 
 
 class UserForm(UserCreationForm):

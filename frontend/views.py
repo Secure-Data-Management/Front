@@ -39,6 +39,7 @@ def upload_file(request):
     global USERKEYS, CONSULTANT
     keys_from_file()
     
+    generate = False
     ''' Generate random file and the Keywords file associated '''
     if(request.GET.get('generate_button')):
         generate_files()
@@ -49,6 +50,7 @@ def upload_file(request):
         file_keywords_content = f.read()
         f.close()
         context = {'file_content': file_content, 'file_keywords_content': file_keywords_content}
+        generate = True
 
 
     ''' Upload a file onto the server '''
@@ -63,7 +65,21 @@ def upload_file(request):
                 list_choices.append({"id": user['id'], "name": user['name']})
         form = ConsultantFileForm(list_choices, request.POST or None, request.FILES)
     else:
-        form = FileForm(request.POST or None, request.FILES)
+        if not generate:
+            form = FileForm(request.POST or None, request.FILES)
+        else:
+            if request.method == "POST":
+                form = FileForm(request.POST, request.FILES)
+            else:
+                form_dict = {
+                    'keywords_to': context['file_keywords_content'].split(',')[1], 
+                    'keywords_type': context['file_keywords_content'].split(',')[0],
+                    'keywords_amount': context['file_keywords_content'].split(',')[2],
+                    'keywords_date': context['file_keywords_content'].split(',')[3],
+                    'keywords_bank': context['file_keywords_content'].split(',')[4],
+                    }
+                print(form_dict)
+                form = FileForm(initial=form_dict)
     upload = False
 
     if(request.GET.get('generate_button')):
@@ -74,11 +90,12 @@ def upload_file(request):
         file_e = form.cleaned_data['file']
         file_encrypt = file_e.read()
         
-        # TODO : modify keywords form field
+        keywords_type = form.cleaned_data['keywords_type']
         keywords_to = form.cleaned_data['keywords_to']
-        keywords_from = form.cleaned_data['keywords_from']
+        keywords_amount = str(form.cleaned_data['keywords_amount'])
         keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
-        keywords = [keywords_to, keywords_from, keywords_date]
+        keywords_bank = form.cleaned_data['keywords_bank']
+        keywords = [keywords_type, keywords_to, keywords_amount, keywords_date, keywords_bank]
 
         if USERKEYS.public_key == CONSULTANT.public_key:
             public_keys = [USERKEYS.public_key]
@@ -89,11 +106,6 @@ def upload_file(request):
                 if user['id'] == int(encrypt_to):
                     public_keys.append(user['key'])
                     public_ids.append(user['id'])
-
-            print(users_json)
-            print(encrypt_to)
-            print(public_keys)
-            print(public_ids)
 
         else:
             # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
@@ -119,16 +131,22 @@ def search_files(request):
 
     if form.is_valid():
         # Generate the keywords
+        keywords_type = form.cleaned_data['keywords_type']
         keywords_to = form.cleaned_data['keywords_to']
-        keywords_from = form.cleaned_data['keywords_from']
 
-        if form.cleaned_data['keywords_date'] is None:
+        if form.cleaned_data['keywords_amount'] is None:
+            keywords_amount = ""
+        else:
+            keywords_amount = str(form.cleaned_data['keywords_amount'])
+        keywords_bank = form.cleaned_data['keywords_bank']
+        
+
+        if form.cleaned_data['keywords_date'] is None or form.cleaned_data['keywords_date'] == 'None':
             keywords_date = ""
         else:
             keywords_date = form.cleaned_data['keywords_date'].strftime("%d %m %Y")
 
-        keywords = [keywords_to, keywords_from, keywords_date]
-        print(keywords)
+        keywords = [keywords_type, keywords_to, keywords_amount, keywords_date, keywords_bank]
 
         # Perform the search => send to the server
         files = search_keywords(keywords, USERKEYS.secret_key, USERKEYS.id) 
