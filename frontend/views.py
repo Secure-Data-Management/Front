@@ -60,10 +60,25 @@ def upload_file(request):
         users_json = get_user_list()
         list_choices = []
         # In the list, add every user except the consultant itself
-        for user in users_json:
-            if user['id'] != USERKEYS.id:
-                list_choices.append({"id": user['id'], "name": user['name']})
-        form = ConsultantFileForm(list_choices, request.POST or None, request.FILES)
+        for user_object in users_json:
+            if user_object['id'] != USERKEYS.id:
+                list_choices.append({"id": user_object['id'], "name": user_object['name']})
+
+        if not generate:
+            form = ConsultantFileForm(list_choices, request.POST or None, request.FILES)
+        else:
+            if request.method == "POST":
+                form = ConsultantFileForm(list_choices, request.POST, request.FILES)
+            else:
+                form_dict = {
+                    'keywords_to': context['file_keywords_content'].split(',')[1], 
+                    'keywords_type': context['file_keywords_content'].split(',')[0],
+                    'keywords_amount': context['file_keywords_content'].split(',')[2],
+                    'keywords_date': context['file_keywords_content'].split(',')[3],
+                    'keywords_bank': context['file_keywords_content'].split(',')[4],
+                    }
+                print(form_dict)
+                form = ConsultantFileForm(list_choices, initial=form_dict)
     else:
         if not generate:
             form = FileForm(request.POST or None, request.FILES)
@@ -102,10 +117,10 @@ def upload_file(request):
             public_ids = [USERKEYS.id]
 
             encrypt_to = form.cleaned_data['encrypt_to']  # id of the user which can read the file
-            for user in users_json:
-                if user['id'] == int(encrypt_to):
-                    public_keys.append(user['key'])
-                    public_ids.append(user['id'])
+            for user_object in users_json:
+                if user_object['id'] == int(encrypt_to):
+                    public_keys.append(user_object['key'])
+                    public_ids.append(user_object['id'])
 
         else:
             # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
