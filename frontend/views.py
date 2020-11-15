@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from frontend.file_generator import generate_files
-from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm
-from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list
+from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm, ServerForm
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address
 from frontend.models import UserKeys
 
 USERKEYS: UserKeys = None
@@ -38,10 +38,10 @@ def keys_from_file():
 def upload_file(request):
     global USERKEYS, CONSULTANT
     keys_from_file()
-    
+
     generate = False
     ''' Generate random file and the Keywords file associated '''
-    if(request.GET.get('generate_button')):
+    if request.GET.get('generate_button'):
         generate_files()
         f = open('./frontend/data_user/File.csv', 'r')
         file_content = f.read()
@@ -51,7 +51,6 @@ def upload_file(request):
         f.close()
         context = {'file_content': file_content, 'file_keywords_content': file_keywords_content}
         generate = True
-
 
     ''' Upload a file onto the server '''
     print(USERKEYS.public_key, CONSULTANT.public_key)
@@ -71,12 +70,12 @@ def upload_file(request):
                 form = ConsultantFileForm(list_choices, request.POST, request.FILES)
             else:
                 form_dict = {
-                    'keywords_to': context['file_keywords_content'].split(',')[1], 
+                    'keywords_to': context['file_keywords_content'].split(',')[1],
                     'keywords_type': context['file_keywords_content'].split(',')[0],
                     'keywords_amount': context['file_keywords_content'].split(',')[2],
                     'keywords_date': context['file_keywords_content'].split(',')[3],
                     'keywords_bank': context['file_keywords_content'].split(',')[4],
-                    }
+                }
                 print(form_dict)
                 form = ConsultantFileForm(list_choices, initial=form_dict)
     else:
@@ -87,24 +86,24 @@ def upload_file(request):
                 form = FileForm(request.POST, request.FILES)
             else:
                 form_dict = {
-                    'keywords_to': context['file_keywords_content'].split(',')[1], 
+                    'keywords_to': context['file_keywords_content'].split(',')[1],
                     'keywords_type': context['file_keywords_content'].split(',')[0],
                     'keywords_amount': context['file_keywords_content'].split(',')[2],
                     'keywords_date': context['file_keywords_content'].split(',')[3],
                     'keywords_bank': context['file_keywords_content'].split(',')[4],
-                    }
+                }
                 print(form_dict)
                 form = FileForm(initial=form_dict)
     upload = False
 
-    if(request.GET.get('generate_button')):
+    if request.GET.get('generate_button'):
         generate_files()
 
     if form.is_valid():
         # file_encrypt must be a string
         file_e = form.cleaned_data['file']
         file_encrypt = file_e.read()
-        
+
         keywords_type = form.cleaned_data['keywords_type']
         keywords_to = form.cleaned_data['keywords_to']
         keywords_amount = str(form.cleaned_data['keywords_amount'])
@@ -121,15 +120,12 @@ def upload_file(request):
                 if user_object['id'] == int(encrypt_to):
                     public_keys.append(user_object['key'])
                     public_ids.append(user_object['id'])
-
         else:
             # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
             public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
             public_ids = [USERKEYS.id, CONSULTANT.id]
-
-        encryption(file_encrypt, keywords, public_keys, public_ids, USERKEYS.secret_key)  # Empty function performing the encryption of the file and sending it to the server
+        encryption(file_encrypt, keywords, public_keys, public_ids)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
-
         form = FileForm()
 
     return render(request, 'frontend/upload.html', locals())
@@ -154,7 +150,6 @@ def search_files(request):
         else:
             keywords_amount = str(form.cleaned_data['keywords_amount'])
         keywords_bank = form.cleaned_data['keywords_bank']
-        
 
         if form.cleaned_data['keywords_date'] is None or form.cleaned_data['keywords_date'] == 'None':
             keywords_date = ""
@@ -164,28 +159,21 @@ def search_files(request):
         keywords = [keywords_type, keywords_to, keywords_amount, keywords_date, keywords_bank]
 
         # Perform the search => send to the server
-        files = search_keywords(keywords, USERKEYS.secret_key, USERKEYS.id) 
+        files = search_keywords(keywords, USERKEYS.secret_key, USERKEYS.id)
         search = True
-    
-    return render(request, 'frontend/search.html', locals())    
 
+    return render(request, 'frontend/search.html', locals())
 
-# QUESTIONS
-# How is the KeyGen performed ? How are the keys distributed ?
-# How is the server setup ? How do we communicate with it ?
-# When are the keywords generated ? Before or after we upload a form ?
-# What to do with the local decrypted files
 
 def create_account(request):
     global USERKEYS, CONSULTANT
 
     form = UserForm(request.POST or None)
     if form.is_valid():
-        new_user = form.save()
-
         # Contact the server to get the global param and compute the pair of keys
         public_key, secret_key, user_id = keygen(form.cleaned_data['username'])
-
+        if user_id == -1:
+            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [f"The username {form.cleaned_data['username']} already exists"]})
         # Save the user information in a JSON file
         USERKEYS = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
         USERKEYS.save_to_file()
@@ -197,4 +185,16 @@ def create_account(request):
         # Redirect to the login page
         return redirect('frontend:home')
 
-    return render(request, 'frontend/sign.html', locals())
+    return render(request, 'frontend/sign.html', {'form': form, "address": get_address()})
+
+
+def change_server(request):
+    form = ServerForm(request.POST or None, initial={'server_ip': get_address()})
+    if form.is_valid():
+        res = contact_server(form.cleaned_data['server_ip'])
+        if res:
+            change_address(form.cleaned_data['server_ip'])
+            return redirect('frontend:home')
+        else:
+            return render(request, 'frontend/server.html', {'form': form, "address": get_address(), 'errors': ["Ip is unreachable"]})
+    return render(request, 'frontend/server.html', {'form': form, "address": get_address()})

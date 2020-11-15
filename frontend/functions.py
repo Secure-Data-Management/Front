@@ -9,8 +9,14 @@ from django.conf import settings
 import json
 import base64
 
-ADDRESS = 'http://127.0.0.1:14000/'
 KEYGEN: KeyGen = None
+
+ADDRESS: str = 'http://127.0.0.1:14000'
+
+
+def get_address() -> str:
+    global ADDRESS
+    return ADDRESS
 
 
 def get_genkey():
@@ -22,6 +28,21 @@ def get_genkey():
     key_gen = KeyGen(global_params.text, global_g.text)
 
     return key_gen
+
+
+def contact_server(address: str) -> bool:
+    print(ADDRESS, address)
+    try:
+        requests.get(address)
+        return True
+    except Exception:
+        return False
+
+
+def change_address(address: str):
+    global ADDRESS
+    ADDRESS = address
+    print(ADDRESS, address)
 
 
 def get_consultant():
@@ -124,13 +145,13 @@ def keygen(username: str):
     """ Contact the server, gets the global parameters and compute the key pair for a user """
     global KEYGEN
     KEYGEN = get_genkey()
+    KEYGEN.gen_keys()
 
-    public_key = str(KEYGEN.pub_key[0])
-    secret_key = str(KEYGEN.priv_key[0])
+    public_key = str(KEYGEN.pub_key)
+    secret_key = str(KEYGEN.priv_key)
 
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)
     user_id = int(key_request.text)
 
-    # TODO case "user_already_exist"
     return public_key, secret_key, user_id

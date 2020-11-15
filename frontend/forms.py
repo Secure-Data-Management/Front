@@ -51,7 +51,9 @@ class SearchForm(forms.Form):
     keywords_bank = forms.CharField(label="Bank", required=False)
 
 
-class UserForm(UserCreationForm):
-    class Meta:
-        model = User
-        fields = ['username', 'password1', 'password2']
+class ServerForm(forms.Form):
+    server_ip = forms.CharField(label="Server IP", max_length=70)
+
+
+class UserForm(forms.Form):
+    username = forms.CharField(label="Username", max_length=30)

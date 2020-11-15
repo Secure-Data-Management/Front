@@ -14,9 +14,19 @@ class KeyGen:
         self.h1: Callable[[Union[bytes, bytearray, str]], Element] = self.get_hash_function(self.pairing, hashlib.sha3_256)
         self.h2: Callable[[Union[bytes, bytearray, str]], Element] = self.get_hash_function(self.pairing, hashlib.sha3_512)
         self.e: Callable[[Element, Element], Element] = lambda e1, e2: self.pairing.apply(e1, e2)
-        self.g = Element(self.pairing, G2, value=g)  # The generator g is given by the global parameters sent by the server
+        self.g = Element(self.pairing, G1, value=g)  # The generator g is given by the global parameters sent by the server
+        self.priv_key: Element = Element.zero()
+        self.pub_key: Element = Element.zero()
+
+    def gen_keys(self):
+        """ Generate the public and private key and populate the elements"""
         self.priv_key: Element = Element.random(self.pairing, Zr)
         self.pub_key: Element = Element(self.pairing, G1, value=self.g ** self.priv_key)
+
+    def gen_public_key(self, sk: str):
+        """ derive the public key and populate both private and public key"""
+        self.priv_key = Element(self.pairing, Zr, value=sk)
+        self.pub_key = Element(self.pairing, G1, value=self.g ** self.priv_key)
 
     def get_hash_function(self, pairing, hash_function: Callable[[Union[bytes, bytearray]], Any]) -> Callable[[Union[bytes, bytearray, str]], Element]:
         return lambda text: Element.from_hash(pairing, G1, hash_function(text).digest()) if isinstance(text, (bytes, bytearray)) else \

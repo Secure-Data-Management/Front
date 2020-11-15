@@ -3,16 +3,14 @@
 {% block 'content' %}
     <div class="row justify-content-center">
         <div class="col-6 text-center">
-            <h1>Create an account</h1>
+            <h1>Change server IP</h1>
             <hr>
-            <h3>
-                Creating an account will create a pair of keys <br> to use in the encrypted search.
-            </h3>
+
             <form method="POST" action=".">
                 {% csrf_token %}
                 {{ form.as_p }}
                 {{ form.errors }}
-                <input type="submit" class="btn btn-success" value="Create Account"/>
+                <input type="submit" class="btn btn-success" value="Change ip"/>
             </form>
             {% if errors %}
                 <div class="alert alert-danger">
