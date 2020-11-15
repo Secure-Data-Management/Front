@@ -97,9 +97,6 @@ def upload_file(request):
                 form = FileForm(initial=form_dict)
     upload = False
 
-    if(request.GET.get('generate_button')):
-        generate_files()
-
     if form.is_valid():
         # file_encrypt must be a string
         file_e = form.cleaned_data['file']
