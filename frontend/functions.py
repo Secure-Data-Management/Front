@@ -11,7 +11,7 @@ import base64
 
 KEYGEN: KeyGen = None
 
-ADDRESS: str = 'http://127.0.0.1:14000/'
+ADDRESS: str = 'http://127.0.0.1:8000/'
 
 
 def get_address() -> str:
@@ -148,9 +148,10 @@ def keygen(username: str):
     global KEYGEN
     KEYGEN = get_genkey()
     if KEYGEN is None:
-        return "", "", -1
-    
+        return "", "", -2
+
     KEYGEN.gen_keys()
+    print(KEYGEN)
     public_key = str(KEYGEN.pub_key)
     secret_key = str(KEYGEN.priv_key)
 

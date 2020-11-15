@@ -172,8 +172,12 @@ def create_account(request):
     if form.is_valid():
         # Contact the server to get the global param and compute the pair of keys
         public_key, secret_key, user_id = keygen(form.cleaned_data['username'])
-        if user_id == -1:
-            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [f"The username {form.cleaned_data['username']} already exists"]})
+        if user_id < 0:
+            e = {
+                -1: f"The username {form.cleaned_data['username']} already exists",
+                -2: f"The server was unreachable at {get_address()}"
+            }
+            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [e[user_id] if user_id in e else f"Unknown error {user_id}"]})
         # Save the user information in a JSON file
         USERKEYS = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
         USERKEYS.save_to_file()
