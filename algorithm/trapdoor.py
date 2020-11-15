@@ -5,10 +5,9 @@ from algorithm.genkey import *
 from pypbc import Element, Zr
 
 
-def generate_trapdoor(priv_key: str, index_list: List[int], keyword_list: List[str], genkey: KeyGen) -> List[Union[Element, int]]:
+def generate_trapdoor(priv_key: str, keyword_list: List[str], genkey: KeyGen) -> List[Element]:
     """
     :param priv_key: the private key of the user
-    :param index_list: list of indexes to denote the location of wIj
     :param keyword_list: list of keywords for the cunjunctive search
     :param genkey: the keygen instance
     :return: [Tjq1, Tjq2, Tjq3] + index_list the three trapdoor element and the index list
@@ -34,5 +33,5 @@ def generate_trapdoor(priv_key: str, index_list: List[int], keyword_list: List[s
         Tjq3 = Tjq3 * genkey.h2(keyword)
     Tjq3 **= t.__ifloordiv__(priv_key)
 
-    return [Tjq1, Tjq2, Tjq3] + index_list
+    return [Tjq1, Tjq2, Tjq3]
 

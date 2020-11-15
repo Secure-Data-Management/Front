@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import base64
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from Crypto.Cipher import AES
 from algorithm.genkey import *
@@ -24,7 +24,8 @@ def decrypt(message: Union[bytearray, bytes, str], key: Union[bytearray, bytes],
         res = False
     return plaintext, res
 
-def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: str = "") -> Tuple[bytearray, Element, List[Element], List[Element]]:
+
+def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: str = "") -> Tuple[Dict[str, str], Element, List[Element], List[Element]]:
     """
     multi Public key Encryption with Conjuctive Keyword. Encrypts both message and keywords !
     Performs the encryption of the keywords and of the message, using the mPECK model. Encrypts the keywords in W using the public keys in pk_list
@@ -34,7 +35,7 @@ def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: 
         genkey: the genkey instance
         message: a message to encrypt (if any)
     Returns:
-        [E, A, B, C] as in the paper, E=b"" if there was no message [A, B, C] with A=g^r, B=[B1, ..., Bn] and C=[C1, ..., Cl]
+        [E, A, B, C] as in the paper, E={} if there was no message [A, B, C] with A=g^r, B=[B1, ..., Bn] and C=[C1, ..., Cl]
     """
     # selects two random values in Zp*
     s: Element = Element.random(genkey.pairing, Zr)
@@ -57,22 +58,22 @@ def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: 
         temp2: Element = f ** s
         C.append(temp1 * temp2)
     # encode the message
-    E: bytearray = bytearray()
+    E: Dict[str, str] = dict()
     if len(message) > 0:
         e_g_g: Element = genkey.pairing.apply(genkey.g, genkey.g)
         e_r_s: Element = r * s
         e_g_g1: Element = e_g_g ** e_r_s
         e_g_g2: bytes = hashlib.sha256(e_g_g1.__str__().encode()).digest()
         ciphertext, tag, nonce = encrypt(message.encode(), e_g_g2)
-        E: bytearray = bytearray(json.dumps({
+        E: Dict[str, str] = {
             "ciphertext": base64.b64encode(ciphertext).decode(),
             "tag": base64.b64encode(tag).decode(),
             "nonce": base64.b64encode(nonce).decode(),
-        }).encode())
+        }
     return E, A, B, C
 
 
-def mdec(xj: str, E: bytearray, Bj: str, A: str, k: KeyGen):
+def mdec(xj: str, E: Dict[str,str], Bj: str, A: str, k: KeyGen):
     """Decrypts the cipher E, using private key xj, Bj and A"""
     secret_key = int(xj, base=16)
     secret_key = Element(k.pairing, Zr, value=secret_key)  # Convert to Element
@@ -82,6 +83,5 @@ def mdec(xj: str, E: bytearray, Bj: str, A: str, k: KeyGen):
     e_A_Bj: Element = k.e(A, Bj)
     res: Element = e_A_Bj ** (~secret_key)
     Xj = hashlib.sha256(res.__str__().encode()).digest()
-    j = json.loads(E.decode())
     plaintext, verify = decrypt(base64.b64decode(j["ciphertext"]), Xj, base64.b64decode(j["tag"]), base64.b64decode(j["nonce"]))
     return plaintext.decode() if verify else None

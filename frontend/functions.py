@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 import requests
 from algorithm.genkey import KeyGen
 from algorithm.mpeck import mpeck, mdec
@@ -7,7 +9,7 @@ from django.conf import settings
 import json
 import base64
 
-ADDRESS = 'http://192.168.1.67:8000/'
+ADDRESS = 'http://127.0.0.1:14000/'
 KEYGEN: KeyGen = None
 
 
@@ -40,9 +42,8 @@ def get_user_list():
     return json_object
 
 
-def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
+def encryption(file_encrypt: str, keywords: List[str], public_keys: List[str], id_list: List[int]):
     """Encrypt the given file and send it to the server """
-    # mpeck(pk_list: list of public keys, keyword_list, genkey, message: file)
     global KEYGEN
 
     if KEYGEN is None:
@@ -51,27 +52,23 @@ def encryption(file_encrypt: str, keywords, public_keys, id_list, private_key):
     key_gen = KEYGEN
 
     # MPECK
-    (ciphertext, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
+    (cipherdict, A, B, C) = mpeck(public_keys, keywords, key_gen, file_encrypt)
     A = str(A)  # transforms elements into string
     B = [str(i) for i in B]
     C = [str(i) for i in C]
 
-    cipher = base64.b64encode(ciphertext).decode('ASCII')
-
     # Send everything to the server
     dictionnary = {
-        "E": cipher,
+        "E": cipherdict,
         "A": A,
         "B": B,
         "C": C,
         "id_list": id_list,  # Autant d'éléments que dans B
     }
 
-    # result = mdec(private_key, base64.b64decode(cipher), B[0], A, KEYGEN)
-    # print('RESULT ', result, '\n\n\n')
-
     r = requests.post(ADDRESS + 'file/upload', data=json.dumps(dictionnary))
-    # TODO upload successful or no answer
+    print(r.json())
+    return r.json()
 
 
 def search_keywords(keywords, private_key, user_id):
@@ -84,26 +81,23 @@ def search_keywords(keywords, private_key, user_id):
         raise Exception("KEYGEN is not defined in search_keywords")
 
     key_gen = KEYGEN
-    liste_keywords = []
-    liste_index = []
+    keywords_list = []
+    index_list = []
     for index, keyword in enumerate(keywords):
         if keyword != "":
-            liste_keywords.append(keyword)
-            liste_index.append(index)
+            keywords_list.append(keyword)
+            index_list.append(index)
 
     # Generate the trapdoor
-    trapdoor = generate_trapdoor(private_key, liste_index, liste_keywords, key_gen)
+    trapdoor = generate_trapdoor(private_key, keywords_list, key_gen)
 
-    for i in range(3):
-        trapdoor[i] = str(trapdoor[i])
-    
+    trapdoor = map(str, trapdoor)
+
     data_json = {
         "trapdoor": trapdoor,
+        "index_list": index_list,
         "id": user_id
     }
-    print(user_id)
-    print(data_json)
-
     # Send to the server
     r = requests.post(ADDRESS + 'search', data=json.dumps(data_json))
 
@@ -112,18 +106,15 @@ def search_keywords(keywords, private_key, user_id):
 
     r_list = json.loads(r.text)
     for index, data in enumerate(r_list):
-        cipher = base64.b64decode(data['E'])
+        cipher_dict: Dict[str, str] = data['E']
         A = data['A']
         Bj = data['B']
         print(data)
-
-        # mdec(private_key: str, ciphertext: bytearray, Bj: str, A: str, k: KeyGen):
-        result = mdec(private_key, cipher, Bj, A, KEYGEN)
+        result = mdec(private_key, cipher_dict, Bj, A, KEYGEN)
 
         file_path = settings.MEDIA_ROOT + 'file_' + str(index) + '.txt'
         with open(file_path, 'w') as file:
             file.write(result)
-
             file_list.append('file_' + str(index) + '.txt')
 
     return file_list
@@ -140,7 +131,6 @@ def keygen(username: str):
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)
     user_id = int(key_request.text)
-    
+
     # TODO case "user_already_exist"
     return public_key, secret_key, user_id
-
