@@ -38,7 +38,6 @@ def get_genkey():
 
 
 def contact_server(address: str) -> bool:
-    print(ADDRESS, address)
     try:
         r = requests.get(address)
         return r.text == "mPECK server"
@@ -49,7 +48,6 @@ def contact_server(address: str) -> bool:
 def change_address(address: str):
     global ADDRESS
     ADDRESS = address.rstrip("/") + "/"
-    print(ADDRESS, address)
 
 
 def get_consultant() -> Tuple[str, Optional[int]]:
@@ -148,21 +146,37 @@ def search_keywords(keywords, private_key, user_id):
     return file_list
 
 
-def load_key(public_key: str) -> bool:
+def load_key(priv_key: str) -> bool:
     global KEYGEN
     KEYGEN = get_genkey()
     if KEYGEN is None:
         return False
-    print(KEYGEN)
     try:
-        KEYGEN.gen_public_key(int(public_key))
+        KEYGEN.gen_public_key(int(priv_key, 16))
         return True
     except Exception:
         return False
 
 
-def get_username():
-    pass
+def get_username_and_id() -> Tuple[str, int]:
+    try:
+        print( KEYGEN.pub_key)
+        r = requests.get(ADDRESS + 'keys/get_username?key=' + KEYGEN.pub_key)
+        print(KEYGEN.pub_key)
+        s = r.text.split(",")
+        if len(s) != 2:
+            return r.text, -1
+        try:
+            id = int(s[0])
+            if id < 0:
+                return s[1], -1
+            else:
+                return s[1], id
+        except ValueError:
+            return s[1], -1
+
+    except Exception as e:
+        return "Server error : " + str(e), -1
 
 
 def keygen(username: str):

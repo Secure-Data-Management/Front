@@ -3,9 +3,10 @@ from typing import Optional
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
+from algorithm.genkey import KeyGen
 from frontend.file_generator import generate_files
 from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm, ServerForm, LoginForm
-from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address, load_key
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address, load_key, get_username_and_id, get_current_genkey
 from frontend.models import UserKeys
 
 CURRENT_USER: Optional[UserKeys] = None
@@ -26,13 +27,17 @@ def login(request):
     global CURRENT_USER
     form = LoginForm(request.POST or None)
     if form.is_valid():
-        load_key(form.cleaned_data["private_key"])
-        # username = get_username()
-        # if res:
-        #     change_address(form.cleaned_data['server_ip'])
-        #     return redirect('frontend:home')
-        # else:
-        #     return render(request, 'frontend/server.html', {'form': form, "address": get_address(), 'errors': ["Ip is unreachable"]})unreachable
+        res = load_key(form.cleaned_data["private_key"])
+        if res:
+            username, id = get_username_and_id()
+            if id >= 0:
+                k: KeyGen = get_current_genkey()
+                CURRENT_USER = UserKeys(id, username, str(k.pub_key), str(k.priv_key))
+                return redirect('frontend:home')
+            else:
+                return render(request, 'frontend/login.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER, "errors": [username]})
+        else:
+            return render(request, 'frontend/login.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER, "errors": ["Key was incorrect"]})
     return render(request, 'frontend/login.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
 
 

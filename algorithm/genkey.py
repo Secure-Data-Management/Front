@@ -25,10 +25,7 @@ class KeyGen:
 
     def gen_public_key(self, sk: int):
         """ derive the public key and populate both private and public key"""
-        try:
-            self.priv_key = Element(self.pairing, Zr, value=sk)
-        except Exception as e:
-            print(e)
+        self.priv_key = Element(self.pairing, Zr, value=sk)
         self.pub_key = Element(self.pairing, G1, value=self.g ** self.priv_key)
 
     def get_hash_function(self, pairing, hash_function: Callable[[Union[bytes, bytearray]], Any]) -> Callable[[Union[bytes, bytearray, str]], Element]:

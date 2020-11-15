@@ -26,11 +26,11 @@ class UserKeys:
     def save_to_file(self):
         json_object = self.get_json()
 
-        with open(os.path.join(self.path_to_file, f"user_{self.username}.txt"), 'w') as outfile:
+        with open(os.path.join(self.path_to_file, f"user_{self.username}.json"), 'w') as outfile:
             json.dump(json_object, outfile,indent=4)
 
     @staticmethod
     def get_from_file(username: int):
-        with open(os.path.join(UserKeys.path_to_file, f"user_{username}.txt")) as json_file:
+        with open(os.path.join(UserKeys.path_to_file, f"user_{username}.json")) as json_file:
             json_object = json.load(json_file)
             return json_object
