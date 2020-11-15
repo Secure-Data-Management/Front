@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union, Tuple, Optional
 
 import requests
 from algorithm.genkey import KeyGen
@@ -35,8 +35,8 @@ def get_genkey():
 def contact_server(address: str) -> bool:
     print(ADDRESS, address)
     try:
-        requests.get(address)
-        return True
+        r = requests.get(address)
+        return r.text == "mPECK server"
     except Exception:
         return False
 
@@ -47,15 +47,15 @@ def change_address(address: str):
     print(ADDRESS, address)
 
 
-def get_consultant():
+def get_consultant() -> Tuple[str, Optional[int]]:
     # Contact the server
     consultant_information = requests.get(ADDRESS + 'keys/get_key?user=consultant')
     # Returns id, str(public_key)
     consultant_object = consultant_information.text.split(',')
-
-    # Return the public information for the consultant : id, public key
-    public_key = consultant_object[1]
-    consultant_id = int(consultant_object[0])
+    if len(consultant_object) != 2:
+        return "".join(map(str, consultant_object)),None
+    consultant_id: int = int(consultant_object[0])
+    public_key: str = consultant_object[1]
     return public_key, consultant_id
 
 
@@ -157,6 +157,8 @@ def keygen(username: str):
 
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)
-    user_id = int(key_request.text)
-
-    return public_key, secret_key, user_id
+    try:
+        user_id = int(key_request.text)
+        return public_key, secret_key, user_id
+    except ValueError:
+        return key_request,"", -4

@@ -15,8 +15,8 @@ class KeyGen:
         self.h2: Callable[[Union[bytes, bytearray, str]], Element] = self.get_hash_function(self.pairing, hashlib.sha3_512)
         self.e: Callable[[Element, Element], Element] = lambda e1, e2: self.pairing.apply(e1, e2)
         self.g = Element(self.pairing, G1, value=g)  # The generator g is given by the global parameters sent by the server
-        self.priv_key: Element = Element.zero(self.pairing,Zr)
-        self.pub_key: Element = Element.zero(self.pairing,G1)
+        self.priv_key: Element = Element.zero(self.pairing, Zr)
+        self.pub_key: Element = Element.zero(self.pairing, G1)
 
     def gen_keys(self):
         """ Generate the public and private key and populate the elements"""

@@ -181,7 +181,9 @@ def create_account(request):
 
         # Create consultant
         consultant_key, consultant_id = get_consultant()
-        CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
+        if consultant_id is None:
+            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': ["No consultant was registered before"]})
+        CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "")
 
         # Redirect to the login page
         return redirect('frontend:home')
