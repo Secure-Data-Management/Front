@@ -116,7 +116,7 @@ def search_keywords(keywords, private_key, user_id):
     # Generate the trapdoor
     trapdoor = generate_trapdoor(private_key, keywords_list, key_gen)
 
-    trapdoor = map(str, trapdoor)
+    trapdoor = list(map(str, trapdoor))
 
     data_json = {
         "trapdoor": trapdoor,

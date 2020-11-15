@@ -187,7 +187,7 @@ def search_files(request):
 
     form = SearchForm(request.POST or None)
     search = False
-
+    files=[]
     if form.is_valid():
         # Generate the keywords
         keywords_type = form.cleaned_data['keywords_type']
@@ -210,7 +210,13 @@ def search_files(request):
         files = search_keywords(keywords, CURRENT_USER.secret_key, CURRENT_USER.id)
         search = True
 
-    return render(request, 'frontend/search.html', locals(), {"current_user": CURRENT_USER})
+    return render(request, 'frontend/search.html', {
+        'form': form,
+        "address": get_address(),
+        "current_user": CURRENT_USER,
+        "search": search,
+        "files": files
+    })
 
 
 def create_account(request):

@@ -60,7 +60,7 @@ def get_keywords(filename: str):  # return keywords from a specific file
 
 def generate_files():  # each file contains one transaction
     path = Path('./frontend/data_user')
-    path.mkdir(parents=True)
+    path.mkdir(parents=True,exist_ok=True)
     filename = 'File'
     generate_record(filename)
     print(str(filename) + ".csv generated")
