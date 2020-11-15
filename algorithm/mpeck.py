@@ -83,5 +83,5 @@ def mdec(xj: str, E: Dict[str,str], Bj: str, A: str, k: KeyGen):
     e_A_Bj: Element = k.e(A, Bj)
     res: Element = e_A_Bj ** (~secret_key)
     Xj = hashlib.sha256(res.__str__().encode()).digest()
-    plaintext, verify = decrypt(base64.b64decode(j["ciphertext"]), Xj, base64.b64decode(j["tag"]), base64.b64decode(j["nonce"]))
+    plaintext, verify = decrypt(base64.b64decode(E["ciphertext"]), Xj, base64.b64decode(E["tag"]), base64.b64decode(E["nonce"]))
     return plaintext.decode() if verify else None
