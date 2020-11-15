@@ -1,6 +1,4 @@
 from django import forms
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 
 
 class FileForm(forms.Form):
@@ -57,3 +55,7 @@ class ServerForm(forms.Form):
 
 class UserForm(forms.Form):
     username = forms.CharField(label="Username", max_length=30)
+
+
+class LoginForm(forms.Form):
+    private_key = forms.CharField(label="Input your private key here",widget=forms.PasswordInput())

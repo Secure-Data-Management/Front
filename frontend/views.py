@@ -1,29 +1,46 @@
+from typing import Optional
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from frontend.file_generator import generate_files
-from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm, ServerForm
-from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address
+from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm, ServerForm, LoginForm
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address, load_key
 from frontend.models import UserKeys
 
-USERKEYS: UserKeys = None
-CONSULTANT: UserKeys = None
+CURRENT_USER: Optional[UserKeys] = None
+CONSULTANT: Optional[UserKeys] = None
 
 
 # Create your views here.
 def home(request):
+    global CURRENT_USER
     """ Homepage of the application """
-    if request.user.is_authenticated:
+    if CURRENT_USER is not None:
         return render(request, 'frontend/home.html', locals())
     else:
-        return redirect('login')
+        return redirect('frontend:login')
+
+
+def login(request):
+    global CURRENT_USER
+    form = LoginForm(request.POST or None)
+    if form.is_valid():
+        load_key(form.cleaned_data["private_key"])
+        # username = get_username()
+        # if res:
+        #     change_address(form.cleaned_data['server_ip'])
+        #     return redirect('frontend:home')
+        # else:
+        #     return render(request, 'frontend/server.html', {'form': form, "address": get_address(), 'errors': ["Ip is unreachable"]})unreachable
+    return render(request, 'frontend/login.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
 
 
 def keys_from_file():
     ''' Get the keys from a user.txt file '''
-    global USERKEYS, CONSULTANT
+    global CURRENT_USER, CONSULTANT
 
-    if USERKEYS is None:
+    if CURRENT_USER is None:
         raise Exception("PASS")
         # json_object = UserKeys.get_from_file()
         # USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
@@ -36,7 +53,7 @@ def keys_from_file():
 
 @login_required
 def upload_file(request):
-    global USERKEYS, CONSULTANT
+    global CURRENT_USER, CONSULTANT
     keys_from_file()
 
     generate = False
@@ -53,14 +70,14 @@ def upload_file(request):
         generate = True
 
     ''' Upload a file onto the server '''
-    print(USERKEYS.public_key, CONSULTANT.public_key)
-    if USERKEYS.public_key == CONSULTANT.public_key:
+    print(CURRENT_USER.public_key, CONSULTANT.public_key)
+    if CURRENT_USER.public_key == CONSULTANT.public_key:
         # It is the consultant
         users_json = get_user_list()
         list_choices = []
         # In the list, add every user except the consultant itself
         for user_object in users_json:
-            if user_object['id'] != USERKEYS.id:
+            if user_object['id'] != CURRENT_USER.id:
                 list_choices.append({"id": user_object['id'], "name": user_object['name']})
 
         if not generate:
@@ -108,9 +125,9 @@ def upload_file(request):
         keywords_bank = form.cleaned_data['keywords_bank']
         keywords = [keywords_type, keywords_to, keywords_amount, keywords_date, keywords_bank]
 
-        if USERKEYS.public_key == CONSULTANT.public_key:
-            public_keys = [USERKEYS.public_key]
-            public_ids = [USERKEYS.id]
+        if CURRENT_USER.public_key == CONSULTANT.public_key:
+            public_keys = [CURRENT_USER.public_key]
+            public_ids = [CURRENT_USER.id]
 
             encrypt_to = form.cleaned_data['encrypt_to']  # id of the user which can read the file
             for user_object in users_json:
@@ -119,8 +136,8 @@ def upload_file(request):
                     public_ids.append(user_object['id'])
         else:
             # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
-            public_keys = [USERKEYS.public_key, CONSULTANT.public_key]
-            public_ids = [USERKEYS.id, CONSULTANT.id]
+            public_keys = [CURRENT_USER.public_key, CONSULTANT.public_key]
+            public_ids = [CURRENT_USER.id, CONSULTANT.id]
         encryption(file_encrypt, keywords, public_keys, public_ids)  # Empty function performing the encryption of the file and sending it to the server
         upload = True
         form = FileForm()
@@ -131,7 +148,7 @@ def upload_file(request):
 @login_required
 def search_files(request):
     ''' Search keywords among encrypted files '''
-    global USERKEYS, CONSULTANT
+    global CURRENT_USER, CONSULTANT
     keys_from_file()
 
     form = SearchForm(request.POST or None)
@@ -156,14 +173,14 @@ def search_files(request):
         keywords = [keywords_type, keywords_to, keywords_amount, keywords_date, keywords_bank]
 
         # Perform the search => send to the server
-        files = search_keywords(keywords, USERKEYS.secret_key, USERKEYS.id)
+        files = search_keywords(keywords, CURRENT_USER.secret_key, CURRENT_USER.id)
         search = True
 
     return render(request, 'frontend/search.html', locals())
 
 
 def create_account(request):
-    global USERKEYS, CONSULTANT
+    global CURRENT_USER, CONSULTANT
 
     form = UserForm(request.POST or None)
     if form.is_valid():
@@ -177,8 +194,8 @@ def create_account(request):
             }
             return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [e[user_id] if user_id in e else f"Unknown error {user_id}"]})
         # Save the user information in a JSON file
-        USERKEYS = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
-        USERKEYS.save_to_file()
+        CURRENT_USER = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
+        CURRENT_USER.save_to_file()
 
         # Create consultant
         consultant_key, consultant_id = get_consultant()

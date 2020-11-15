@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block 'content' %}
+    <div class="row justify-content-center">
+        <div class="col-6 text-center">
+            <h1>Login with private key</h1>
+            <hr>
+
+            <form method="POST" action=".">
+                {% csrf_token %}
+                {{ form.as_p }}
+                {{ form.errors }}
+                <input type="submit" class="btn btn-success" value="Login"/>
+            </form>
+            {% if errors %}
+                <div class="alert alert-danger">
+                    {% for error in errors %}
+                        <p style="line-height: 80%">
+                            <strong>Error : </strong> {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

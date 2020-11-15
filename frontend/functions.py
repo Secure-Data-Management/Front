@@ -14,6 +14,11 @@ KEYGEN: KeyGen = None
 ADDRESS: str = 'http://127.0.0.1:8000/'
 
 
+def get_current_genkey() -> KeyGen:
+    global KEYGEN
+    return KEYGEN
+
+
 def get_address() -> str:
     global ADDRESS
     return ADDRESS
@@ -143,6 +148,23 @@ def search_keywords(keywords, private_key, user_id):
     return file_list
 
 
+def load_key(public_key: str) -> bool:
+    global KEYGEN
+    KEYGEN = get_genkey()
+    if KEYGEN is None:
+        return False
+    print(KEYGEN)
+    try:
+        KEYGEN.gen_public_key(int(public_key))
+        return True
+    except Exception:
+        return False
+
+
+def get_username():
+    pass
+
+
 def keygen(username: str):
     """ Contact the server, gets the global parameters and compute the key pair for a user """
     global KEYGEN
@@ -151,7 +173,6 @@ def keygen(username: str):
         return "", "", -2
 
     KEYGEN.gen_keys()
-    print(KEYGEN)
     public_key = str(KEYGEN.pub_key)
     secret_key = str(KEYGEN.priv_key)
 

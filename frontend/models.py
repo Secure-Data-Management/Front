@@ -27,7 +27,7 @@ class UserKeys:
         json_object = self.get_json()
 
         with open(os.path.join(self.path_to_file, f"user_{self.username}.txt"), 'w') as outfile:
-            json.dump(json_object, outfile)
+            json.dump(json_object, outfile,indent=4)
 
     @staticmethod
     def get_from_file(username: int):
