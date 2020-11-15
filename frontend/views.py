@@ -75,7 +75,8 @@ def upload_file(request):
     status, reason = guarantee_everything()
     if not status:
         return render(request, 'frontend/error.html', {"error": reason})
-
+    file_content = ""
+    file_keywords_content = ""
     generate = False
     ''' Generate random file and the Keywords file associated '''
     if request.GET.get('generate_button'):
@@ -161,7 +162,14 @@ def upload_file(request):
         upload = True
         form = FileForm()
 
-    return render(request, 'frontend/upload.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
+    return render(request, 'frontend/upload.html', {
+        'form': form,
+        "address": get_address(),
+        "current_user": CURRENT_USER,
+        "upload": upload,
+        "file_keywords_content": file_keywords_content,
+        "file_content": file_content,
+    })
 
 
 # TODO validate tokens
