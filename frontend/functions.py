@@ -1,7 +1,7 @@
 import requests
-from pooc.genkey import KeyGen
-from pooc.mpeck import mpeck, mdec
-from pooc.trapdoor import generate_trapdoor
+from algorithm.genkey import KeyGen
+from algorithm.mpeck import mpeck, mdec
+from algorithm.trapdoor import generate_trapdoor
 from django.conf import settings
 
 import json
@@ -134,8 +134,8 @@ def keygen(username: str):
     global KEYGEN
     KEYGEN = get_genkey()
 
-    public_key = str(KEYGEN.pub_keys[0])
-    secret_key = str(KEYGEN.priv_keys[0])
+    public_key = str(KEYGEN.pub_key[0])
+    secret_key = str(KEYGEN.priv_key[0])
 
     # Send the public key to the server
     key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)

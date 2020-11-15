@@ -1,44 +1,40 @@
 #!/usr/bin/python3
-from typing import Callable, List, Tuple
+import base64
+import json
+from typing import List, Tuple
 
-from pooc.genkey import *
-# Antoine
+from Crypto.Cipher import AES
+from algorithm.genkey import *
 import hashlib
 
 
-def xor(message: Union[bytearray, bytes, str], key: Union[bytearray, bytes]) -> bytearray:
-    """Takes a string message and a bytes sequence and hash it with a displacing key sequence"""
-    res: bytearray = bytearray()
-    if type(message) == str:
-        message = bytearray(message.encode())
-    elif type(message) == bytes:
-        message = bytearray(message)
-    if type(key) == bytes:
-        key = bytearray(key)
-    if len(message) > len(key):
-        for i in range(len(message)):
-            res.append(message[i] ^ key[i % len(key)])
-    else:
-        for i in range(len(message)):
-            res.append(key[i] ^ message[i % len(message)])
-    return res
+def encrypt(message: Union[bytearray, bytes, str], key: Union[bytearray, bytes]) -> Tuple[bytes, bytes, bytes]:
+    cipher = AES.new(key, AES.MODE_EAX)
+    ciphertext, tag = cipher.encrypt_and_digest(message)
+    return ciphertext, tag, cipher.nonce
 
+
+def decrypt(message: Union[bytearray, bytes, str], key: Union[bytearray, bytes], tag: Union[bytearray, bytes], nonce: Union[bytearray, bytes]) -> Tuple[bytes, bool]:
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    plaintext: bytes = cipher.decrypt(message)
+    try:
+        cipher.verify(tag)
+        res = True
+    except ValueError:
+        res = False
+    return plaintext, res
 
 def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: str = "") -> Tuple[bytearray, Element, List[Element], List[Element]]:
     """
     multi Public key Encryption with Conjuctive Keyword. Encrypts both message and keywords !
     Performs the encryption of the keywords and of the message, using the mPECK model. Encrypts the keywords in W using the public keys in pk_list
     Parameters:
-        pk: list of keys (from Keygen.keys)
+        pk_list: list of keys (from Keygen.keys)
         keyword_list: set of keywords
-        params: a dictionary containing the security parameters
+        genkey: the genkey instance
+        message: a message to encrypt (if any)
     Returns:
-        [E, A, B, C] as in the paper, E=b"" if there was no message
-            [A, B, C] with A=g^r, B=[B1, ..., Bn] and C=[C1, ..., Cl]
-            :param keyword_list:
-            :param pk_list:
-            :param message:
-            :param genkey:
+        [E, A, B, C] as in the paper, E=b"" if there was no message [A, B, C] with A=g^r, B=[B1, ..., Bn] and C=[C1, ..., Cl]
     """
     # selects two random values in Zp*
     s: Element = Element.random(genkey.pairing, Zr)
@@ -67,8 +63,12 @@ def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: 
         e_r_s: Element = r * s
         e_g_g1: Element = e_g_g ** e_r_s
         e_g_g2: bytes = hashlib.sha256(e_g_g1.__str__().encode()).digest()
-        E: bytearray = xor(message, e_g_g2)
-    
+        ciphertext, tag, nonce = encrypt(message.encode(), e_g_g2)
+        E: bytearray = bytearray(json.dumps({
+            "ciphertext": base64.b64encode(ciphertext).decode(),
+            "tag": base64.b64encode(tag).decode(),
+            "nonce": base64.b64encode(nonce).decode(),
+        }).encode())
     return E, A, B, C
 
 
@@ -82,24 +82,6 @@ def mdec(xj: str, E: bytearray, Bj: str, A: str, k: KeyGen):
     e_A_Bj: Element = k.e(A, Bj)
     res: Element = e_A_Bj ** (~secret_key)
     Xj = hashlib.sha256(res.__str__().encode()).digest()
-    m = xor(E, Xj)
-    m = m.decode()
-    return m
-
-
-if __name__ == "__main__":
-    # number of participants
-    _n = 3
-    k = KeyGen(_n)
-    # encryption of the message
-    _message = "This is the message"
-    _keywords = ["test", "encryption"]
-    # there are 3 clients, only allow 0 and 1 to search and decrypt
-    _recipients = [0, 1]
-    _recipients_pk = [k.pub_keys[r] for r in _recipients]
-    _E, _A, _B, _C = mpeck(_recipients_pk, _keywords, k, message=_message)
-    print(f"Message \"{_message}\" encrypted, only recipients {_recipients} are allowed to decrypt")
-    # decrypt as 0
-    for _i in range(len(_recipients)):
-        m = mdec(k.priv_keys[_i], _E, _B[_i], _A, k)
-        print(f"Client {_i}: decryption is: {m}")
+    j = json.loads(E.decode())
+    plaintext, verify = decrypt(base64.b64decode(j["ciphertext"]), Xj, base64.b64decode(j["tag"]), base64.b64decode(j["nonce"]))
+    return plaintext.decode() if verify else None
