@@ -11,7 +11,7 @@ import base64
 
 KEYGEN: KeyGen = None
 
-ADDRESS: str = 'http://127.0.0.1:14000'
+ADDRESS: str = 'http://127.0.0.1:14000/'
 
 
 def get_address() -> str:
@@ -20,7 +20,9 @@ def get_address() -> str:
 
 
 def get_genkey():
-    # Contact the server
+    if not contact_server(ADDRESS):
+        return None
+
     global_params = requests.get(ADDRESS + 'keys/get_params')
     global_g = requests.get(ADDRESS + 'keys/get_generator')
 
@@ -41,7 +43,7 @@ def contact_server(address: str) -> bool:
 
 def change_address(address: str):
     global ADDRESS
-    ADDRESS = address
+    ADDRESS = address.rstrip("/") + "/"
     print(ADDRESS, address)
 
 
@@ -145,8 +147,10 @@ def keygen(username: str):
     """ Contact the server, gets the global parameters and compute the key pair for a user """
     global KEYGEN
     KEYGEN = get_genkey()
+    if KEYGEN is None:
+        return "", "", -1
+    
     KEYGEN.gen_keys()
-
     public_key = str(KEYGEN.pub_key)
     secret_key = str(KEYGEN.priv_key)
 
