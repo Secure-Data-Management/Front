@@ -53,7 +53,7 @@ def get_consultant() -> Tuple[str, Optional[int]]:
     # Returns id, str(public_key)
     consultant_object = consultant_information.text.split(',')
     if len(consultant_object) != 2:
-        return "".join(map(str, consultant_object)),None
+        return "".join(map(str, consultant_object)), None
     consultant_id: int = int(consultant_object[0])
     public_key: str = consultant_object[1]
     return public_key, consultant_id
@@ -161,4 +161,4 @@ def keygen(username: str):
         user_id = int(key_request.text)
         return public_key, secret_key, user_id
     except ValueError:
-        return key_request,"", -4
+        return key_request.text, "", -3

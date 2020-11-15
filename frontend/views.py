@@ -172,7 +172,8 @@ def create_account(request):
         if user_id < 0:
             e = {
                 -1: f"The username {form.cleaned_data['username']} already exists",
-                -2: f"The server was unreachable at {get_address()}"
+                -2: f"The server was unreachable at {get_address()}",
+                -3: public_key,
             }
             return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [e[user_id] if user_id in e else f"Unknown error {user_id}"]})
         # Save the user information in a JSON file
