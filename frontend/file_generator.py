@@ -1,4 +1,5 @@
 import csv
+from pathlib import Path
 from random import randrange
 import datetime
 import os
@@ -58,8 +59,8 @@ def get_keywords(filename: str):  # return keywords from a specific file
 
 
 def generate_files():  # each file contains one transaction
-    if (os.path.isdir("./frontend/data_user") == False):  # creating /data_users folder
-        os.mkdir("./frontend/data_user")
+    path = Path('./frontend/data_user')
+    path.mkdir(parents=True)
     filename = 'File'
     generate_record(filename)
     print(str(filename) + ".csv generated")

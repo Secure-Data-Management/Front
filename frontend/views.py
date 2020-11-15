@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, Tuple
 
 from django.shortcuts import render, redirect
@@ -81,10 +82,14 @@ def upload_file(request):
     ''' Generate random file and the Keywords file associated '''
     if request.GET.get('generate_button'):
         generate_files()
-        f = open('./frontend/data_user/File.csv', 'r')
+        filename = Path('./frontend/data_user/File.csv')
+        filename.touch(exist_ok=True)
+        f = open(filename, 'r')
         file_content = f.read()
         f.close()
-        f = open('./frontend/data_user/File_keywords.csv', 'r')
+        filename = Path('./frontend/data_user/File_keywords.csv')
+        filename.touch(exist_ok=True)
+        f = open(filename, 'r')
         file_keywords_content = f.read()
         f.close()
         context = {'file_content': file_content, 'file_keywords_content': file_keywords_content}
@@ -131,7 +136,7 @@ def upload_file(request):
                 }
                 print(form_dict)
                 form = FileForm(initial=form_dict)
-    upload = False
+    upload = ""
 
     if form.is_valid():
         # file_encrypt must be a string
@@ -158,8 +163,8 @@ def upload_file(request):
             # The list of public keys of the users we want to encrypt the file for (i.e. author + consultant)
             public_keys = [CURRENT_USER.public_key, CONSULTANT.public_key]
             public_ids = [CURRENT_USER.id, CONSULTANT.id]
-        encryption(file_encrypt, keywords, public_keys, public_ids)  # Empty function performing the encryption of the file and sending it to the server
-        upload = True
+        res=encryption(file_encrypt, keywords, public_keys, public_ids)  # Empty function performing the encryption of the file and sending it to the server
+        upload = res
         form = FileForm()
 
     return render(request, 'frontend/upload.html', {

@@ -68,13 +68,13 @@ def get_user_list():
     return json_object
 
 
-def encryption(file_encrypt: bytes, keywords: List[str], public_keys: List[str], id_list: List[int]):
+def encryption(file_encrypt: bytes, keywords: List[str], public_keys: List[str], id_list: List[int])->str:
     """Encrypt the given file and send it to the server """
     global KEYGEN
 
     if KEYGEN is None:
         print("ERROR", "KEYGEN is not defined in encryption")
-        return
+        return ""
     key_gen = KEYGEN
 
     # MPECK
@@ -93,8 +93,7 @@ def encryption(file_encrypt: bytes, keywords: List[str], public_keys: List[str],
     }
 
     r = requests.post(ADDRESS + 'file/upload', data=json.dumps(dictionnary))
-    print(r)
-    return r.json()
+    return r.text
 
 
 def search_keywords(keywords, private_key, user_id):
