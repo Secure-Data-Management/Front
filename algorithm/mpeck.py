@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import base64
 import json
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from Crypto.Cipher import AES
 from algorithm.genkey import *
@@ -73,7 +73,7 @@ def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: 
     return E, A, B, C
 
 
-def mdec(xj: str, E: Dict[str,str], Bj: str, A: str, k: KeyGen):
+def mdec(xj: str, E: Dict[str,str], Bj: str, A: str, k: KeyGen)->Optional[bytes]:
     """Decrypts the cipher E, using private key xj, Bj and A"""
     secret_key = int(xj, base=16)
     secret_key = Element(k.pairing, Zr, value=secret_key)  # Convert to Element
@@ -84,4 +84,4 @@ def mdec(xj: str, E: Dict[str,str], Bj: str, A: str, k: KeyGen):
     res: Element = e_A_Bj ** (~secret_key)
     Xj = hashlib.sha256(res.__str__().encode()).digest()
     plaintext, verify = decrypt(base64.b64decode(E["ciphertext"]), Xj, base64.b64decode(E["tag"]), base64.b64decode(E["nonce"]))
-    return plaintext.decode() if verify else None
+    return plaintext if verify else None

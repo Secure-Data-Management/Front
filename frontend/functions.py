@@ -134,14 +134,14 @@ def search_keywords(keywords, private_key, user_id):
         cipher_dict: Dict[str, str] = data['E']
         A = data['A']
         Bj = data['B']
-        print(data)
         result = mdec(private_key, cipher_dict, Bj, A, KEYGEN)
-
-        file_path = settings.MEDIA_ROOT + 'file_' + str(index) + '.txt'
-        with open(file_path, 'w') as file:
-            file.write(result)
-            file_list.append('file_' + str(index) + '.txt')
-
+        if result is not None:
+            file_path = settings.MEDIA_ROOT + 'file_' + str(index) + '.txt'
+            with open(file_path, 'wb') as file:
+                file.write(result)
+                file_list.append('file_' + str(index) + '.txt')
+        else:
+            print("WARNING",index,"error")
     return file_list
 
 
