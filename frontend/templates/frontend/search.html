@@ -1,25 +1,28 @@
 {% extends "base.html" %}
 
 {% block 'content' %}
-<div class="container">
-    <h1>Search among your files</h1>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-8 text-center">
+                <h1>Search among your files</h1>
 
-    <p>
-        Here you can search your private files.
-    </p>
+                <p>
+                    Here you can search your private files.
+                </p>
 
-    <form method="POST" action=".">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" class="btn btn-secondary" value="Search Keywords" />
-    </form>
+                <form method="POST" action=".">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input type="submit" class="btn btn-secondary" value="Search Keywords"/>
+                </form>
 
-    {% if search %}
-        {% for file in files %}
-            <a href="/media/{{ file }}">{{ file }}</a>
-        {% endfor %}
-    {% endif %}
+                {% if search %}
+                    {% for file in files %}
+                        <a href="/media/{{ file }}">{{ file }}</a>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-</div>
-    
 {% endblock %}
