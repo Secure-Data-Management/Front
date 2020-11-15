@@ -25,7 +25,7 @@ def decrypt(message: Union[bytearray, bytes, str], key: Union[bytearray, bytes],
     return plaintext, res
 
 
-def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: str = "") -> Tuple[Dict[str, str], Element, List[Element], List[Element]]:
+def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: bytes = b"") -> Tuple[Dict[str, str], Element, List[Element], List[Element]]:
     """
     multi Public key Encryption with Conjuctive Keyword. Encrypts both message and keywords !
     Performs the encryption of the keywords and of the message, using the mPECK model. Encrypts the keywords in W using the public keys in pk_list
@@ -64,7 +64,7 @@ def mpeck(pk_list: List[str], keyword_list: List[str], genkey: KeyGen, message: 
         e_r_s: Element = r * s
         e_g_g1: Element = e_g_g ** e_r_s
         e_g_g2: bytes = hashlib.sha256(e_g_g1.__str__().encode()).digest()
-        ciphertext, tag, nonce = encrypt(message.encode(), e_g_g2)
+        ciphertext, tag, nonce = encrypt(message, e_g_g2)
         E: Dict[str, str] = {
             "ciphertext": base64.b64encode(ciphertext).decode(),
             "tag": base64.b64encode(tag).decode(),

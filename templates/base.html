@@ -26,6 +26,9 @@
             <ul class="navbar-nav ml-auto">
                 {% if address %}
                     <li class="nav-item">
+                        <p class="p-1 m-0"> User : {{ current_user.username | safe }}</p>
+                    </li>
+                    <li class="nav-item">
                         <p class="p-1 m-0"> Server ip : {{ address | safe }}</p>
                     </li>
                 {% endif %}

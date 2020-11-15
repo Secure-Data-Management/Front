@@ -68,7 +68,7 @@ def get_user_list():
     return json_object
 
 
-def encryption(file_encrypt: str, keywords: List[str], public_keys: List[str], id_list: List[int]):
+def encryption(file_encrypt: bytes, keywords: List[str], public_keys: List[str], id_list: List[int]):
     """Encrypt the given file and send it to the server """
     global KEYGEN
 
@@ -93,7 +93,7 @@ def encryption(file_encrypt: str, keywords: List[str], public_keys: List[str], i
     }
 
     r = requests.post(ADDRESS + 'file/upload', data=json.dumps(dictionnary))
-    print(r.json())
+    print(r)
     return r.json()
 
 
