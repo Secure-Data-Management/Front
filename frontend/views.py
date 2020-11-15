@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -43,32 +43,38 @@ def login(request):
 
 
 def logout(request):
-    global CURRENT_USER,CONSULTANT
+    global CURRENT_USER, CONSULTANT
     CURRENT_USER = None
     CONSULTANT = None
     reset_keygen()
     return render(request, 'frontend/logged_out.html')
 
 
-def keys_from_file():
+def guarantee_everything() -> Tuple[bool, str]:
     ''' Get the keys from a user.txt file '''
     global CURRENT_USER, CONSULTANT
 
     if CURRENT_USER is None:
-        raise Exception("PASS")
-        # json_object = UserKeys.get_from_file()
-        # USERKEYS = UserKeys(json_object['id'], json_object['username'], json_object['public_key'], json_object['private_key'])
-        #
-        # # Create consultant
-        # consultant_key, consultant_id = get_consultant()
-        # CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "noonecares")
-        # print(USERKEYS, CONSULTANT)
+        return False, "You are not logged in"
+    if CONSULTANT is None:
+        consultant_key, consultant_id = get_consultant()
+        if consultant_id is None:
+            return False, "No consultant exists on the server"
+        CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "")
+    if get_current_genkey() is None:
+        CURRENT_USER = None
+        CONSULTANT = None
+        reset_keygen()
+        return False, "You are not even logged in"
+    return True, ""
 
 
 # TODO validate tokens
 def upload_file(request):
     global CURRENT_USER, CONSULTANT
-    keys_from_file()
+    status, reason = guarantee_everything()
+    if not status:
+        return render(request, 'frontend/error.html', {"error": reason})
 
     generate = False
     ''' Generate random file and the Keywords file associated '''
@@ -84,7 +90,6 @@ def upload_file(request):
         generate = True
 
     ''' Upload a file onto the server '''
-    print(CURRENT_USER.public_key, CONSULTANT.public_key)
     if CURRENT_USER.public_key == CONSULTANT.public_key:
         # It is the consultant
         users_json = get_user_list()
@@ -156,14 +161,16 @@ def upload_file(request):
         upload = True
         form = FileForm()
 
-    return render(request, 'frontend/upload.html', locals(), {"current_user": CURRENT_USER})
+    return render(request, 'frontend/upload.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
 
 
 # TODO validate tokens
 def search_files(request):
     ''' Search keywords among encrypted files '''
     global CURRENT_USER, CONSULTANT
-    keys_from_file()
+    status, reason = guarantee_everything()
+    if not status:
+        return render(request, 'frontend/error.html', {"error": reason})
 
     form = SearchForm(request.POST or None)
     search = False

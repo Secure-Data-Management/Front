@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block 'content' %}
+    <div class="row justify-content-center">
+        <div class="col-6 text-center">
+            <h1>Error</h1>
+            <p class="alert alert-danger">
+                {{ error }}
+            </p>
+            <a href="{% url 'frontend:home' %}"> Return to home</a>
+        </div>
+    </div>
+{% endblock %}
