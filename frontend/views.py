@@ -6,7 +6,8 @@ from django.contrib.auth.decorators import login_required
 from algorithm.genkey import KeyGen
 from frontend.file_generator import generate_files
 from frontend.forms import FileForm, ConsultantFileForm, SearchForm, UserForm, ServerForm, LoginForm
-from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address, load_key, get_username_and_id, get_current_genkey
+from frontend.functions import encryption, search_keywords, keygen, get_consultant, get_user_list, contact_server, change_address, get_address, load_key, get_username_and_id, get_current_genkey, \
+    reset_keygen
 from frontend.models import UserKeys
 
 CURRENT_USER: Optional[UserKeys] = None
@@ -18,7 +19,7 @@ def home(request):
     global CURRENT_USER
     """ Homepage of the application """
     if CURRENT_USER is not None:
-        return render(request, 'frontend/home.html', locals())
+        return render(request, 'frontend/home.html', {"current_user": CURRENT_USER})
     else:
         return redirect('frontend:login')
 
@@ -41,6 +42,14 @@ def login(request):
     return render(request, 'frontend/login.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
 
 
+def logout(request):
+    global CURRENT_USER,CONSULTANT
+    CURRENT_USER = None
+    CONSULTANT = None
+    reset_keygen()
+    return render(request, 'frontend/logged_out.html')
+
+
 def keys_from_file():
     ''' Get the keys from a user.txt file '''
     global CURRENT_USER, CONSULTANT
@@ -56,7 +65,7 @@ def keys_from_file():
         # print(USERKEYS, CONSULTANT)
 
 
-@login_required
+# TODO validate tokens
 def upload_file(request):
     global CURRENT_USER, CONSULTANT
     keys_from_file()
@@ -147,10 +156,10 @@ def upload_file(request):
         upload = True
         form = FileForm()
 
-    return render(request, 'frontend/upload.html', locals())
+    return render(request, 'frontend/upload.html', locals(), {"current_user": CURRENT_USER})
 
 
-@login_required
+# TODO validate tokens
 def search_files(request):
     ''' Search keywords among encrypted files '''
     global CURRENT_USER, CONSULTANT
@@ -181,7 +190,7 @@ def search_files(request):
         files = search_keywords(keywords, CURRENT_USER.secret_key, CURRENT_USER.id)
         search = True
 
-    return render(request, 'frontend/search.html', locals())
+    return render(request, 'frontend/search.html', locals(), {"current_user": CURRENT_USER})
 
 
 def create_account(request):
@@ -197,7 +206,7 @@ def create_account(request):
                 -2: f"The server was unreachable at {get_address()}",
                 -3: public_key,
             }
-            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [e[user_id] if user_id in e else f"Unknown error {user_id}"]})
+            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': [e[user_id] if user_id in e else f"Unknown error {user_id}"], "current_user": CURRENT_USER})
         # Save the user information in a JSON file
         CURRENT_USER = UserKeys(user_id, form.cleaned_data['username'], public_key, secret_key)
         CURRENT_USER.save_to_file()
@@ -205,13 +214,13 @@ def create_account(request):
         # Create consultant
         consultant_key, consultant_id = get_consultant()
         if consultant_id is None:
-            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': ["No consultant was registered before"]})
+            return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), 'errors': ["No consultant was registered before"], "current_user": CURRENT_USER})
         CONSULTANT = UserKeys(consultant_id, "consultant", consultant_key, "")
 
         # Redirect to the login page
         return redirect('frontend:home')
 
-    return render(request, 'frontend/sign.html', {'form': form, "address": get_address()})
+    return render(request, 'frontend/sign.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})
 
 
 def change_server(request):
@@ -222,5 +231,5 @@ def change_server(request):
             change_address(form.cleaned_data['server_ip'])
             return redirect('frontend:home')
         else:
-            return render(request, 'frontend/server.html', {'form': form, "address": get_address(), 'errors': ["Ip is unreachable"]})
-    return render(request, 'frontend/server.html', {'form': form, "address": get_address()})
+            return render(request, 'frontend/server.html', {'form': form, "address": get_address(), 'errors': ["Ip is unreachable"], "current_user": CURRENT_USER})
+    return render(request, 'frontend/server.html', {'form': form, "address": get_address(), "current_user": CURRENT_USER})

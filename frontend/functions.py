@@ -158,12 +158,15 @@ def load_key(priv_key: str) -> bool:
         return False
 
 
+def reset_keygen():
+    global KEYGEN
+    KEYGEN = None
+
+
 def get_username_and_id() -> Tuple[str, int]:
     try:
-        print( KEYGEN.pub_key)
-        r = requests.get(ADDRESS + 'keys/get_username?key=' + KEYGEN.pub_key)
-        print(KEYGEN.pub_key)
-        s = r.text.split(",")
+        r = requests.get(ADDRESS + 'keys/get_username?key=' + str(KEYGEN.pub_key))
+        s = r.text.split(";")
         if len(s) != 2:
             return r.text, -1
         try:
@@ -191,9 +194,12 @@ def keygen(username: str):
     secret_key = str(KEYGEN.priv_key)
 
     # Send the public key to the server
-    key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)
     try:
-        user_id = int(key_request.text)
-        return public_key, secret_key, user_id
-    except ValueError:
-        return key_request.text, "", -3
+        key_request = requests.get(ADDRESS + 'keys/add_key' + '?key=' + str(public_key) + '&user=' + username)
+        try:
+            user_id = int(key_request.text)
+            return public_key, secret_key, user_id
+        except ValueError:
+            return key_request.text, "", -3
+    except Exception as e:
+        return e, "", -3
