@@ -34,11 +34,10 @@ You need to run `python3 manage.py migrate` to make all the migrations before st
 
 # Running
 
-You can simply type `python3 manage.py 127.0.0.1:15000`
+You can simply type `python3 manage.py runserver 127.0.0.1:15000`
 
-You can now open your browser at: [http//127.0.0.1:15000](127.0.0.1:15000)
+You can now open your browser at: [http://127.0.0.1:15000](127.0.0.1:15000)
 
 You need to add a server address at the beginning, so you might want to start it also.
 
 Once the server address has been entered you can generate your key pairs.
-
